@@ -1,5 +1,8 @@
 import { Application, Container, Graphics, Ticker } from 'pixi.js';
 
+// Fixed balloon body radius (px). Total visible height ≈ 2.3 × radius.
+const BALLOON_RADIUS = 76;
+
 const BALLOON_COLORS = [
   0xff4444, // red
   0xff8800, // orange
@@ -29,10 +32,10 @@ export class Balloon {
     this.onPop = opts.onPop;
 
     const color = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
-    const radius = 28 + Math.random() * 18; // 28–46 px
+    const radius = BALLOON_RADIUS;
 
-    // Rise speed varies: base 1.2–2.2 px/frame, scaled by multiplier
-    this.riseSpeed = (1.2 + Math.random() * 1.0) * opts.speedMultiplier;
+    // Fixed base rise speed (px/frame), scaled by multiplier.
+    this.riseSpeed = 1.2 * opts.speedMultiplier;
 
     this.container = new Container();
 
@@ -113,14 +116,19 @@ export class Balloon {
   get isDone(): boolean {
     return this.popping && this.container.alpha <= 0;
   }
+
+  get y(): number {
+    return this.container.y;
+  }
 }
 
 export class BalloonManager {
   private balloons: Balloon[] = [];
   private container: Container;
   private app: Application;
-  private respawnDelay = 40; // frame gap between one balloon leaving and the next
-  private gapTimer = 40; // start ready so the first balloon appears promptly
+  // Vertical gap (px) between consecutive balloons, centre-to-centre.
+  // Body height ≈ 2.3 × radius; ×4 leaves roughly three balloons of space between them.
+  private balloonSpacing = BALLOON_RADIUS * 2.3 * 4;
   private speedMultiplier = 1;
   private onScoreIncrement: () => void;
 
@@ -166,14 +174,12 @@ export class BalloonManager {
       this.balloons.splice(this.balloons.indexOf(b), 1);
     }
 
-    // One balloon at a time: only spawn the next after the screen is clear
-    // and a short gap has passed, so they arrive in a single sequence.
-    if (this.balloons.length === 0) {
-      this.gapTimer++;
-      if (this.gapTimer >= this.respawnDelay) {
-        this.gapTimer = 0;
-        this.spawnBalloon();
-      }
+    // Spawn the next balloon once the most recent one has risen far enough,
+    // so several share the screen in sequence with a fixed gap between them.
+    const spawnY = this.app.screen.height + BALLOON_RADIUS + 40;
+    const newest = this.balloons[this.balloons.length - 1];
+    if (!newest || spawnY - newest.y >= this.balloonSpacing) {
+      this.spawnBalloon();
     }
   }
 }
