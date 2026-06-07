@@ -127,8 +127,8 @@ export class BalloonManager {
   private container: Container;
   private app: Application;
   // Vertical gap (px) between consecutive balloons, centre-to-centre.
-  // Body height ≈ 2.3 × radius; ×4 leaves roughly three balloons of space between them.
-  private balloonSpacing = BALLOON_RADIUS * 2.3 * 4;
+  // Body height ≈ 2.3 × radius; ×3 leaves roughly two balloons of space between them.
+  private balloonSpacing = BALLOON_RADIUS * 2.3 * 3;
   private speedMultiplier = 1;
   private onScoreIncrement: () => void;
 
